@@ -20,7 +20,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          git lfs fetch --object-id origin db8c97ff0381cc6a4faf84219d285433f0d0974fd1c82b1b503b704e1cc36438
+          git lfs fetch --all origin
           git lfs checkout
           ls -lh "PK P3ar1 (PT-BR).zip"
           rm -rf /tmp/pearl /tmp/pearlout
