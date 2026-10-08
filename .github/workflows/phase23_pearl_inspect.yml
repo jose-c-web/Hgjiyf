@@ -2,6 +2,8 @@ name: Phase 23 - Pearl Reference Inspection
 
 on:
   workflow_dispatch:
+  push:
+    branches: [main]
 
 permissions:
   contents: read
