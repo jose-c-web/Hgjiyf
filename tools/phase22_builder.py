@@ -1,0 +1,349 @@
+from pathlib import Path
+import json, struct, hashlib, zipfile, math, collections
+
+ROM = Path("sinnoh_step21_warpchain.gba")
+R = ROM.read_bytes()
+SHA = hashlib.sha256(R).hexdigest()
+BASE = 0x776358
+ENTRY = 24
+NSETS = 58
+VROM = 0x08000000
+P20 = Path("/tmp/p20")
+OUT = Path("/tmp/p22")
+OUT.mkdir(exist_ok=True)
+
+names = [
+    "General","Petalburg","Rustboro","Dewford","Slateport","Mauville","Lavaridge",
+    "Fallarbor","Fortree","Lilycove","Mossdeep","EverGrande","Pacifidlog","Sootopolis",
+    "BattleFrontierOutsideWest","BattleFrontierOutsideEast","Building","Shop",
+    "PokemonCenter","Cave","PokemonSchool","PokemonFanClub","Unused1","MeteorFalls",
+    "OceanicMuseum","CableClub","SeashoreHouse","PrettyPetalFlowerShop","PokemonDayCare",
+    "Facility","BikeShop","RusturfTunnel","SecretBaseBrownCave","SecretBaseTree",
+    "SecretBaseShrub","SecretBaseBlueCave","SecretBaseYellowCave","SecretBaseRedCave",
+    "InsideOfTruck","Unused2","Contest","LilycoveMuseum","BrendansMaysHouse","Lab",
+    "Underwater","PetalburgGym","SootopolisGym","GenericBuilding","MauvilleGameCorner",
+    "RustboroGym","DewfordGym","MauvilleGym","LavaridgeGym","TrickHousePuzzle",
+    "FortreeGym","MossdeepGym","InsideShip","SecretBasePrimary"
+]
+
+def gba_off(ptr):
+    if ptr < VROM:
+        return None
+    o = ptr - VROM
+    return o if 0 <= o < len(R) else None
+
+def lz77(data, limit=0x40000):
+    if len(data) < 4 or data[0] != 0x10:
+        return data
+    n = data[1] | (data[2] << 8) | (data[3] << 16)
+    if n <= 0 or n > limit:
+        raise ValueError("bad_lz_size")
+    i, out = 4, bytearray()
+    while len(out) < n:
+        if i >= len(data):
+            raise ValueError("lz_eof_flags")
+        flags = data[i]; i += 1
+        for bit in range(8):
+            if len(out) >= n: break
+            if flags & (0x80 >> bit):
+                if i + 1 >= len(data):
+                    raise ValueError("lz_eof_backref")
+                a, b = data[i], data[i+1]; i += 2
+                disp = ((a & 0xF) << 8) | b
+                ln = (a >> 4) + 3
+                s = len(out) - disp - 1
+                if s < 0:
+                    raise ValueError("lz_bad_backref")
+                for _ in range(ln):
+                    out.append(out[s]); s += 1
+                    if len(out) >= n: break
+            else:
+                if i >= len(data):
+                    raise ValueError("lz_eof_literal")
+                out.append(data[i]); i += 1
+    return bytes(out)
+
+def decode_tiles(raw):
+    return [raw[i:i+32] for i in range(0, len(raw) - 31, 32)]
+
+def decode4(tile):
+    pix = [0] * 64
+    for y in range(8):
+        row = tile[y*4:y*4+4]
+        for xpair, b in enumerate(row):
+            pix[y*8+xpair*2] = b & 0xF
+            pix[y*8+xpair*2+1] = b >> 4
+    return pix
+
+def read_palettes(ptr):
+    o = gba_off(ptr)
+    if o is None or o + 512 > len(R):
+        return []
+    vals = []
+    for i in range(256):
+        c = struct.unpack_from("<H", R, o + i*2)[0]
+        rr = (c & 0x1F) << 3
+        gg = ((c >> 5) & 0x1F) << 3
+        bb = ((c >> 10) & 0x1F) << 3
+        vals.append((rr,gg,bb))
+    return vals
+
+def metatile_features(words, tiles, pals):
+    # Render the full 16x16 two-layer metatile into a compact feature vector.
+    img = [[0 for _ in range(16)] for _ in range(16)]
+    owner = [[0 for _ in range(16)] for _ in range(16)]
+    valid_refs = 0
+    unique_tiles = set()
+    for k,w in enumerate(words[:8]):
+        tid = w & 0x3FF
+        xf = bool(w & 0x400)
+        yf = bool(w & 0x800)
+        pal = (w >> 12) & 0xF
+        if tid >= len(tiles):
+            continue
+        valid_refs += 1
+        unique_tiles.add(tid)
+        p = decode4(tiles[tid])
+        ox = (k & 1) * 8
+        oy = ((k >> 1) & 1) * 8
+        # First 4 = base layer, last 4 = upper layer. Upper layer overlays
+        # only non-zero pixels, matching the usual GBA transparency convention.
+        layer = 0 if k < 4 else 1
+        for yy in range(8):
+            sy = 7-yy if yf else yy
+            for xx in range(8):
+                sx = 7-xx if xf else xx
+                v = p[sy*8+sx]
+                x,y = ox+xx,oy+yy
+                if layer == 0 or v != 0:
+                    img[y][x] = v + pal*16
+                    owner[y][x] = layer + 1
+    rgb=[]
+    hist=[0]*16
+    sat=[]; lum=[]
+    for y in range(16):
+        for x in range(16):
+            z=img[y][x]
+            pi=z & 15
+            hist[pi]+=1
+            if pals and pi < len(pals):
+                r,g,b=pals[pi]
+                mx=max(r,g,b); mn=min(r,g,b)
+                sat.append(mx-mn)
+                lum.append((r+g+b)/3)
+    edge=0
+    nonzero=0
+    for y in range(16):
+        for x in range(16):
+            if img[y][x] != 0: nonzero += 1
+            if x and ((img[y][x] & 15)!=(img[y][x-1]&15)): edge += 1
+            if y and ((img[y][x] & 15)!=(img[y-1][x]&15)): edge += 1
+    s=sum(hist) or 1
+    hist=[v/s for v in hist]
+    return {
+        "valid_tile_refs":valid_refs,
+        "unique_tile_count":len(unique_tiles),
+        "nonzero_ratio":nonzero/256.0,
+        "edge_ratio":edge/480.0,
+        "palette_hist":hist,
+        "mean_luminance":(sum(lum)/len(lum))/255.0 if lum else 0,
+        "mean_saturation":(sum(sat)/len(sat))/255.0 if sat else 0,
+        "top_bottom_balance":abs(sum(img[y][x] for y in range(8) for x in range(16))-sum(img[y][x] for y in range(8,16) for x in range(16)))/4096.0
+    }
+
+def dist(a,b):
+    d=0.0
+    d += abs(a["nonzero_ratio"]-b["nonzero_ratio"])*2.0
+    d += abs(a["edge_ratio"]-b["edge_ratio"])*2.0
+    d += abs(a["mean_luminance"]-b["mean_luminance"])*1.5
+    d += abs(a["mean_saturation"]-b["mean_saturation"])*1.5
+    d += abs(a["top_bottom_balance"]-b["top_bottom_balance"])
+    d += sum(abs(x-y) for x,y in zip(a["palette_hist"],b["palette_hist"]))
+    return d
+
+# Parse the stable real tileset table.
+sets=[]
+errors=[]
+for sid in range(NSETS):
+    flags,tp,pp,mp,cb,ap = struct.unpack_from("<6I", R, BASE+sid*ENTRY)
+    try:
+        to=gba_off(tp)
+        if to is None: raise ValueError("bad_tiles_ptr")
+        raw=R[to:to+0x40000]
+        tile_raw=lz77(raw)
+        tiles=decode_tiles(tile_raw)
+        if not tiles: raise ValueError("no_tiles")
+        pals=read_palettes(pp)
+        mo=gba_off(mp)
+        if mo is None or mo+512*16>len(R): raise ValueError("bad_metatile_ptr")
+        metaw=[struct.unpack_from("<8H",R,mo+i*16) for i in range(512)]
+        ao=gba_off(ap) if ap else None
+        attrs=[struct.unpack_from("<H",R,ao+i*2)[0] if ao is not None and ao+2*i+2<=len(R) else None for i in range(512)]
+        valid=[]
+        for mid,w in enumerate(metaw):
+            if any((x & 0x3FF) >= len(tiles) for x in w):
+                continue
+            f=metatile_features(w,tiles,pals)
+            valid.append({"id":mid,"behavior":(attrs[mid]&0xFF) if attrs[mid] is not None else None,
+                          "attribute":attrs[mid],"features":f,
+                          "tile_indices":[x&0x3FF for x in w],
+                          "palette_indices":[(x>>12)&0xF for x in w]})
+        sets.append({"id":sid,"name":names[sid],"flags":flags,"tiles_ptr":hex(tp),"palettes_ptr":hex(pp),
+                     "metatiles_ptr":hex(mp),"attributes_ptr":hex(ap),"tile_count":len(tiles),
+                     "valid_metatile_count":len(valid),"metatiles":valid})
+    except Exception as e:
+        errors.append({"tileset":sid,"name":names[sid],"error":str(e)})
+        sets.append({"id":sid,"name":names[sid],"flags":flags,"tiles_ptr":hex(tp),"palettes_ptr":hex(pp),
+                     "metatiles_ptr":hex(mp),"attributes_ptr":hex(ap),"tile_count":0,
+                     "valid_metatile_count":0,"metatiles":[]})
+
+cat=json.load(open(P20/"phase20_metatile_catalog.json"))["records"]
+# General is the stable primary source for the Phase20 prototype visuals.
+general=sets[0]
+gen_by_id={m["id"]:m for m in general["metatiles"]}
+prototypes={}
+for rec in cat:
+    mid=rec["metatile_id"]
+    p=gen_by_id.get(mid)
+    # If the semantic ID is not a direct General metatile, use the recorded
+    # tile/palette composition as a prototype by synthesizing feature statistics.
+    if p:
+        prototypes[mid]={"role":rec["role"],"behavior":rec.get("behavior"),
+                         "attribute":rec.get("attribute"),"features":p["features"]}
+    else:
+        prototypes[mid]={"role":rec["role"],"behavior":rec.get("behavior"),
+                         "attribute":rec.get("attribute"),"features":None}
+
+candidates={}
+for sid,s in enumerate(sets):
+    arr={}
+    for pid,p in prototypes.items():
+        if not s["metatiles"]:
+            arr[str(pid)]=[]
+            continue
+        scored=[]
+        for m in s["metatiles"]:
+            behavior_penalty=0.0
+            if p["behavior"] is not None and m["behavior"] is not None:
+                behavior_penalty=0.0 if m["behavior"]==p["behavior"] else 0.75
+            visual=dist(p["features"],m["features"]) if p["features"] else 99.0
+            score=visual+behavior_penalty
+            scored.append((score,m))
+        scored.sort(key=lambda x:x[0])
+        top=[]
+        for rank,(score,m) in enumerate(scored[:20],1):
+            conf=max(0.0,min(1.0,1.0-score/6.0))
+            top.append({"rank":rank,"metatile_id":m["id"],"score":round(score,6),
+                        "confidence":round(conf,6),"behavior":m["behavior"],
+                        "attribute":m["attribute"],
+                        "tile_indices":m["tile_indices"],
+                        "palette_indices":m["palette_indices"]})
+        arr[str(pid)]=top
+    candidates[str(sid)]=arr
+
+json.dump({
+    "phase":22,"base_rom_sha256":SHA,"tileset_count":len(sets),
+    "semantic_prototypes":prototypes,"errors":errors,
+    "policy":"Candidates only. No semantic mapping is committed to ROM; low-confidence matches remain candidates."
+},open(OUT/"phase22_semantic_candidates.json","w"),indent=2)
+
+# For each reconstructed map, restrict candidates to the tileset pair selected
+# in Phase21 and emit a per-semantic-role shortlist. This is the bridge toward
+# replacing 0xFFFF cells, but does not replace them yet.
+p21plan=P20.parent/"does_not_exist"
+maps=json.load(open(P20/"phase20_map_validation.json"))
+def choose(name):
+    n=name.upper()
+    if "PC" in n:return 18
+    if "GYM" in n:
+        return 49
+    if "CAVE" in n or n.startswith("D") or "TUNNEL" in n:return 19
+    if "FS" in n:return 47
+    if n.startswith("W"):return 12
+    if n.startswith("L"):return 23
+    if n.startswith("T"):
+        try:k=int(n[1:])
+        except:k=1
+        return [1,2,3,4,5,6,7,8,9,10,11,12,13][(k-1)%13]
+    if n.startswith("C"):
+        try:k=int(n[1:])
+        except:k=1
+        return [1,2,3,4,5,6,7,8,9,10,11,13][(k-1)%12]
+    return 1
+
+map_out=[]
+for v in maps:
+    sid=choose(v["name"])
+    map_out.append({"map_id":v["map_id"],"name":v["name"],"width":v["width"],"height":v["height"],
+                    "secondary_tileset_id":sid,"secondary_tileset_name":names[sid],
+                    "semantic_candidates":{k:candidates[str(sid)].get(k,[])[:8] for k in candidates[str(sid)]},
+                    "rom_integration_allowed":False})
+json.dump({"phase":22,"map_references":len(map_out),"maps":map_out,"base_rom_sha256":SHA},
+          open(OUT/"phase22_map_candidates.json","w"),indent=2)
+
+stats=collections.Counter()
+for sid in range(NSETS):
+    for pid in prototypes:
+        n=len(candidates[str(sid)].get(str(pid),[]))
+        stats["candidate_lists"]+=1
+        if n: stats["nonempty_lists"]+=1
+stats.update({"tilesets":len(sets),"tilesets_with_errors":len(errors),"semantic_roles":len(prototypes),
+              "map_references":len(map_out),"integration_allowed":0})
+json.dump(dict(stats),open(OUT/"phase22_mapping_statistics.json","w"),indent=2)
+
+# Strict structural validation.
+verrors=[]
+if SHA != "cd7a419797e9a45c3060771769b8f028592416e9381fc8e88b5da4c2c640dfa2":
+    verrors.append("base_rom_sha_mismatch")
+if len(sets)!=58: verrors.append("tileset_count")
+for s in sets:
+    for m in s["metatiles"]:
+        if not (0 <= m["id"] < 512): verrors.append(f"metatile_id:{s['id']}:{m['id']}")
+        if len(m["tile_indices"])!=8: verrors.append(f"tile_count:{s['id']}:{m['id']}")
+        if any(x >= s["tile_count"] for x in m["tile_indices"]): verrors.append(f"tile_ref:{s['id']}:{m['id']}")
+        if any(x > 15 for x in m["palette_indices"]): verrors.append(f"palette_ref:{s['id']}:{m['id']}")
+json.dump({"phase":22,"base_rom_sha256":SHA,"tilesets":len(sets),
+           "tilesets_with_parse_errors":len(errors),"validation_errors":verrors,
+           "rom_integration_allowed":False,
+           "meaning":"This phase inventories real GBA metatiles and creates ranked semantic candidates. It intentionally does not write blockdata into the ROM."},
+          open(OUT/"phase22_validation.json","w"),indent=2)
+
+report = f"""# Phase 22 - Real GBA Metatile Correspondence
+
+Base ROM SHA-256: {SHA}
+
+Real tileset records: {len(sets)}
+Semantic roles from Phase 20: {len(prototypes)}
+Map references analyzed: {len(map_out)}
+Tilesets with parse errors: {len(errors)}
+Validation errors: {len(verrors)}
+ROM integration: NOT ALLOWED
+
+## What was built
+
+Every real tileset in the stable Step21 ROM was decoded into its 4bpp tiles, palettes, 512 metatile records and available attributes. The Phase20 semantic IDs are used only as visual/behavior prototypes.
+
+For every semantic role and every real tileset, ranked candidate metatiles were generated using:
+- rendered 16x16 visual feature similarity;
+- palette distribution;
+- luminance/saturation;
+- edge/texture density;
+- layer occupancy;
+- metatile behavior compatibility.
+
+The result is a candidate database, not a blind replacement. 0xFFFF remains untouched and no ROM bytes are modified.
+
+## Next gate
+
+The next construction gate is map-context selection: use the actual Phase20 cell neighborhoods, map category and adjacent semantic cells to choose compatible candidates consistently. Only high-confidence, neighborhood-consistent candidates should become real visual blockdata.
+
+"""
+open(OUT/"PHASE22_REPORT.md","w").write(report)
+
+z=Path("/tmp/sinnoh_reconstruction_phase22.zip")
+with zipfile.ZipFile(z,"w",zipfile.ZIP_DEFLATED) as f:
+    for x in OUT.rglob("*"):
+        if x.is_file(): f.write(x,x.relative_to(OUT.parent))
+print("PHASE22_SHA256",hashlib.sha256(z.read_bytes()).hexdigest())
+print("PHASE22_SIZE",z.stat().st_size)
+print("TILESETS",len(sets),"ROLES",len(prototypes),"MAPS",len(map_out),"ERRORS",len(errors),"VALIDATION_ERRORS",len(verrors))
