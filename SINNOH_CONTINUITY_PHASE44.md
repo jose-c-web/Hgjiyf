@@ -204,3 +204,16 @@ O relatório e as estatísticas da Phase44 agora também estão versionados em:
 - sinnoh_work/phase44/phase44_statistics.json
 
 IMPORTANTE: os binários acima ainda precisam ser materializados no GitHub/LFS ou anexados ao próximo chat para que outro ambiente possa recuperá-los. Não substituir a Phase44 por uma ROM anterior.
+
+
+## PHASE45 ARTIFACT HANDOFF — 2026-10-08
+
+Canonical next-chat handoff: `CONTINUITY/PHASE45_START_HERE.md`.
+
+Verified Phase44 ROM: `sinnoh_step44_events_converted.gba` — SHA-256 `9e12e7c2de0f0671d339c6683e6295944d5a281f3d0e4d436fd617c2120512d0`, 33,554,432 bytes.
+
+Verified Pearl script NARC: `fielddata_script_scr_seq_release.narc` — SHA-256 `c62e6f7f537fbff6604ba0e7985270ace40562d5a6912f2661b892545f039af7`, 219,608 bytes.
+
+Verified Pearl event NARC: `fielddata_eventdata_zone_event_release.narc` — SHA-256 `3b61439a26b1c4bc6de9b1301a5a3073f6edf2b392082a4427e8ef3228bb23a4`, 140,020 bytes.
+
+Phase45 must not substitute an earlier ROM when the exact Phase44 binary is unavailable. Large binary artifacts are documented by verified hashes in `CONTINUITY/PHASE45_INPUT_MANIFEST.json`; the current GitHub connector has no direct binary/release upload capability, and Library upload was blocked by the account storage quota. This is an access limitation, not permission to restart or fake Phase45.
