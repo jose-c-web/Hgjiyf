@@ -1,0 +1,47 @@
+name: Phase 23 - Contextual Metatile Selection
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  inspect-phase20:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          lfs: true
+          fetch-depth: 1
+      - name: Inspect Phase 20 map payload
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(sha256sum sinnoh_step21_warpchain.gba | awk '{print $1}')" = "cd7a419797e9a45c3060771769b8f028592416e9381fc8e88b5da4c2c640dfa2"
+          rm -rf /tmp/p20 /tmp/inspect
+          mkdir -p /tmp/p20 /tmp/inspect
+          unzip -q sinnoh_work/sinnoh_reconstruction_phase20.zip -d /tmp/p20
+          python3 - <<'PY'
+          from pathlib import Path
+          import json,collections,struct
+          root=Path("/tmp/p20")
+          print("ROOTS", [str(x.relative_to(root)) for x in root.iterdir()][:20])
+          mans=list(root.rglob("manifest.json"))
+          bins=list(root.rglob("visual_metatile_map.bin"))
+          print("MANIFESTS",len(mans),"BINS",len(bins))
+          for m in mans[:20]:
+              try:
+                  d=json.loads(m.read_text())
+              except Exception as e:
+                  print("BAD",m,e); continue
+              print("MAP",m.parent.name,"keys",list(d)[:20],"data",d)
+              b=m.parent/"visual_metatile_map.bin"
+              if b.exists():
+                  raw=b.read_bytes()
+                  vals=list(struct.unpack("<"+"H"*(len(raw)//2),raw))
+                  c=collections.Counter(vals)
+                  print(" BIN",len(raw),len(vals),"top",c.most_common(12))
+          PY
