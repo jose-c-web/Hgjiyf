@@ -1,6 +1,6 @@
 # Phase 44/45 artifact recovery
 
-The exact Phase44 inputs have been recovered and verified in the working environment.
+The exact Phase44 and Pearl script/event inputs were **re-verified in the current working environment on 2026-10-08**.
 
 ## Verified artifacts
 
@@ -14,13 +14,25 @@ The exact Phase44 inputs have been recovered and verified in the working environ
 
 ## Phase44 package contents
 
-The recovery ZIP contains the exact Phase44 ROM plus:
+The recovery ZIP was inspected directly and contains exactly:
 
+- `sinnoh_step44_events_converted.gba`
 - `PHASE44_REPORT.md`
 - `phase44_statistics.json`
 - `phase44_warp_fallbacks.json`
 
-The ROM reports 204 maps, 813 object events, 380 warp events and 31 coordinate/trigger events. Pearl script IDs were preserved as metadata; Gen4 bytecode was not executed directly on GBA.
+The Phase44 ROM is the exact 32 MiB input with SHA-256 `9e12e7c2de0f0671d339c6683e6295944d5a281f3d0e4d436fd617c2120512d0`.
+
+The Pearl source archive contains the original `PK P3ar1 (PT-BR).nds`. The two required NARCs were recovered from that source and independently hashed.
+
+## Phase45 status
+
+- Phase 1–44: complete; do not redo.
+- Phase44 base: **verified and accessible**.
+- Pearl script NARC: **verified and accessible**.
+- Pearl event NARC: **verified and accessible**.
+- Phase45: **READY_FOR_SCRIPT_CONVERSION**.
+- Existing unverified Phase45 outputs are not accepted as the basis for continuation.
 
 ## Phase45 rule
 
@@ -28,4 +40,8 @@ Use the exact SHA-256 inputs above. Do not substitute an earlier ROM, do not reb
 
 ## Distribution note
 
-The repository stores continuity metadata and cryptographic fingerprints only. The ROM/NDS/NARC binaries are not published here because they contain copyrighted game assets. Keep the verified binaries in the private working environment and compare their hashes against this manifest before Phase45 conversion.
+The repository stores continuity metadata, reports and cryptographic fingerprints. The ROM/NDS/NARC binaries are not published here because they contain copyrighted game assets. The verified binary inputs remain available in the working environment and must be hash-checked before conversion.
+
+## Next engineering step
+
+Audit the exact `scr_seq_release.narc`, recover the complete D/P command inventory, identify the actual Quetzal/Emerald script ABI in the verified Phase44 ROM, then generate and statically validate converted scripts while preserving Phase44 event/warp data and the warp-engine fix.
