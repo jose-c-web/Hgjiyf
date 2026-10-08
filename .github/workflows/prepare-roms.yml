@@ -1,0 +1,56 @@
+name: Prepare ROM artifacts
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  prepare-roms:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository with Git LFS
+        uses: actions/checkout@v4
+        with:
+          lfs: true
+
+      - name: Verify ROM files and SHA-256
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          test -f "sinnoh_step21_warpchain.gba"
+          test -f "sinnoh_step22_route202_jubilife.gba"
+          test -f "PK P3ar1 (PT-BR).zip"
+
+          echo "Step21:"
+          sha256sum "sinnoh_step21_warpchain.gba"
+          test "$(sha256sum "sinnoh_step21_warpchain.gba" | awk '{print $1}')" = "cd7a419797e9a45c3060771769b8f028592416e9381fc8e88b5da4c2c640dfa2"
+
+          echo "Step22:"
+          sha256sum "sinnoh_step22_route202_jubilife.gba"
+          test "$(sha256sum "sinnoh_step22_route202_jubilife.gba" | awk '{print $1}')" = "74c588216101830e6e55f55242d17d4b254f115c94e7d02ddf2a502880cd6182"
+
+          echo "Pearl reference:"
+          sha256sum "PK P3ar1 (PT-BR).zip"
+          test "$(sha256sum "PK P3ar1 (PT-BR).zip" | awk '{print $1}')" = "db8c97ff0381cc6a4faf84219d285433f0d0974fd1c82b1b503b704e1cc36438"
+
+      - name: Package ROMs
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p artifact
+          cp "sinnoh_step21_warpchain.gba" artifact/
+          cp "sinnoh_step22_route202_jubilife.gba" artifact/
+          cp "PK P3ar1 (PT-BR).zip" artifact/
+
+      - name: Upload ROM artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: sinnoh-roms
+          path: artifact/
+          if-no-files-found: error
+          retention-days: 7
