@@ -1,0 +1,25 @@
+{
+  "phase": 51,
+  "rom": "Sinnoh_Phase51_twinleaf_event_chain.gba",
+  "sha256": "aace25352f0ef2615f8f40a4334eb5cf719e6a82825a2e2e086305fda1acb5de",
+  "object_record_base": "0x1fe3004",
+  "record_size": 24,
+  "patched_local_ids": [
+    1,
+    2,
+    3,
+    4,
+    5
+  ],
+  "script_base": "0x1ff91e0",
+  "script_size": 20,
+  "flags": [
+    "0x0700",
+    "0x0701",
+    "0x0702",
+    "0x0703",
+    "0x0704"
+  ],
+  "static_validation": "PASS",
+  "runtime_validation": "PENDING"
+}
