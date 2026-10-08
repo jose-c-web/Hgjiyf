@@ -1,0 +1,21 @@
+{
+  "phase": 55,
+  "output_sha256": "d8cce30d4b6b76ef283a6de4e64419c2d661aadefde97068f92e85a862ddd92f",
+  "confirmed_literal_refs": {
+    "0x0890C970": [
+      "0x915de8",
+      "0x13474a0",
+      "0x1348504",
+      "0x1fda0a4"
+    ],
+    "0x0890BA64": [
+      "0x90c978"
+    ],
+    "0x0890BA70": [
+      "0x90c97c"
+    ]
+  },
+  "runtime_hook": false,
+  "static_validation": "PASS",
+  "runtime_validation": "PENDING"
+}
