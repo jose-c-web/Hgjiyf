@@ -1,0 +1,19 @@
+{
+  "phase": 44,
+  "base_sha256": "1bde8c2356fc7deafed7741394e72882718d53b2f68cffcf77afb805d5eb36f3",
+  "sha256": "9e12e7c2de0f0671d339c6683e6295944d5a281f3d0e4d436fd617c2120512d0",
+  "rom_size": 33554432,
+  "arena": {"start": "0x1fe3000", "end": "0x1fe96cc", "bytes": 26316, "script_ptr": "0x9fe3000"},
+  "maps": 204,
+  "objects": 813,
+  "warps": 380,
+  "triggers": 31,
+  "furniture_source": 174,
+  "warp_exact": 12,
+  "warp_fallback": 368,
+  "fallback_unique_destinations": 157,
+  "scripts_preserved_as_metadata": 813,
+  "script_execution": "disabled_safely_with_gba_end_stub",
+  "warp_fix_preserved": true,
+  "errors": []
+}
