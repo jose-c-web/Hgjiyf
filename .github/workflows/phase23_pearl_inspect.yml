@@ -1,0 +1,32 @@
+name: Phase 23 - Pearl Reference Inspection
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  inspect-pearl:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          lfs: true
+          fetch-depth: 1
+      - name: Inspect Pearl source
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -rf /tmp/pearl /tmp/pearlout
+          mkdir -p /tmp/pearl /tmp/pearlout
+          unzip -q "PK P3ar1 (PT-BR).zip" -d /tmp/pearl
+          echo "ZIP_CONTENTS"
+          find /tmp/pearl -maxdepth 3 -type f -printf '%P %s bytes\n' | head -80
+          python3 - <<'PY'
+          from pathlib import Path
+          p=Path('/tmp/pearl')
+          for x in p.rglob('*'):
+              if x.is_file():
+                  print("FILE",x.relative_to(p),x.stat().st_size)
+          PY
