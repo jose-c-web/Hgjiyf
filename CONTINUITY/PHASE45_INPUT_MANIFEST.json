@@ -1,0 +1,40 @@
+{
+  "phase": 45,
+  "status": "READY_FOR_SCRIPT_CONVERSION",
+  "project": "Sinnoh GBA Quetzal/Emerald",
+  "maps": 204,
+  "phase44_rom": {
+    "filename": "sinnoh_step44_events_converted.gba",
+    "size": 33554432,
+    "sha256": "9e12e7c2de0f0671d339c6683e6295944d5a281f3d0e4d436fd617c2120512d0"
+  },
+  "phase44_zip": {
+    "filename": "sinnoh-reconstruction-phase44.zip",
+    "size": 14532507,
+    "sha256": "78882441482c26f70dcbd12ee5834b731757ef5109698e72b2b2eb1e1993df4c"
+  },
+  "pearl_sources": {
+    "scr_seq_release.narc": {
+      "filename": "fielddata_script_scr_seq_release.narc",
+      "size": 219608,
+      "sha256": "c62e6f7f537fbff6604ba0e7985270ace40562d5a6912f2661b892545f039af7"
+    },
+    "zone_event_release.narc": {
+      "filename": "fielddata_eventdata_zone_event_release.narc",
+      "size": 140020,
+      "sha256": "3b61439a26b1c4bc6de9b1301a5a3073f6edf2b392082a4427e8ef3228bb23a4"
+    }
+  },
+  "phase44_report": {
+    "objects": 813,
+    "warps": 380,
+    "triggers": 31,
+    "furniture_source": 174,
+    "warp_exact": 12,
+    "warp_fallback": 368,
+    "scripts_preserved_as_metadata": 813,
+    "script_execution": "disabled_safely_with_gba_end_stub",
+    "warp_fix_preserved": true
+  },
+  "phase45_rule": "Do not substitute an earlier ROM or invent a script inventory when the exact Phase44 ROM/NARCs are unavailable."
+}
