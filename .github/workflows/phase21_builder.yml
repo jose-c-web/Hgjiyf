@@ -6,10 +6,10 @@ on:
     branches: [main]
 
 permissions:
-  contents: write
+  contents: read
 
 jobs:
-  phase21:
+  build-phase21:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository with LFS
@@ -17,49 +17,85 @@ jobs:
         with:
           lfs: true
           fetch-depth: 1
-
-      - name: Verify base ROM
+      - name: Build Phase 21
+        shell: bash
         run: |
-          set -e
+          set -euo pipefail
           test -f sinnoh_step21_warpchain.gba
           test "$(sha256sum sinnoh_step21_warpchain.gba | awk '{print $1}')" = "cd7a419797e9a45c3060771769b8f028592416e9381fc8e88b5da4c2c640dfa2"
-          test -f sinnoh_work/sinnoh_reconstruction_phase20.zip
-          unzip -t sinnoh_work/sinnoh_reconstruction_phase20.zip
-
-      - name: Extract Phase 20
-        run: |
-          rm -rf /tmp/phase20
-          mkdir -p /tmp/phase20
-          unzip -q sinnoh_work/sinnoh_reconstruction_phase20.zip -d /tmp/phase20
-
-      - name: Inspect Phase 20
-        run: |
+          unzip -t sinnoh_work/sinnoh_reconstruction_phase20.zip >/dev/null
+          rm -rf /tmp/p20 /tmp/p21
+          mkdir -p /tmp/p20 /tmp/p21
+          unzip -q sinnoh_work/sinnoh_reconstruction_phase20.zip -d /tmp/p20
           python3 - <<'PY'
-          import json, os, glob
-          root='/tmp/phase20'
-          out=[]
-          files=sorted(glob.glob(root+'/**/*',recursive=True))
-          out.append('FILES=%d'%sum(os.path.isfile(x) for x in files))
-          for f in files:
-              if os.path.isfile(f) and f.lower().endswith('.json'):
-                  rel=os.path.relpath(f,root)
-                  try:
-                      d=json.load(open(f,encoding='utf8'))
-                      if isinstance(d,dict):
-                          out.append(rel+' KEYS='+','.join(list(d.keys())[:40]))
-                          if 'maps' in d and isinstance(d['maps'],list):
-                              out.append(rel+' maps_count='+str(len(d['maps'])))
-                      elif isinstance(d,list):
-                          out.append(rel+' LIST='+str(len(d)))
-                  except Exception as e:
-                      out.append(rel+' JSON_ERROR='+str(e))
-          open('/tmp/phase20_probe.txt','w').write('\\n'.join(out))
-          print('\\n'.join(out[:300]))
+          from pathlib import Path
+          import json,struct,hashlib,shutil,re,collections,zipfile
+          rom=Path('sinnoh_step21_warpchain.gba'); r=rom.read_bytes(); base=0x776358
+          p20=Path('/tmp/p20'); out=Path('/tmp/p21'); out.mkdir()
+          names=['General','Petalburg','Rustboro','Dewford','Slateport','Mauville','Lavaridge','Fallarbor','Fortree','Lilycove','Mossdeep','EverGrande','Pacifidlog','Sootopolis','BattleFrontierOutsideWest','BattleFrontierOutsideEast','Building','Shop','PokemonCenter','Cave','PokemonSchool','PokemonFanClub','Unused1','MeteorFalls','OceanicMuseum','CableClub','SeashoreHouse','PrettyPetalFlowerShop','PokemonDayCare','Facility','BikeShop','RusturfTunnel','SecretBaseBrownCave','SecretBaseTree','SecretBaseShrub','SecretBaseBlueCave','SecretBaseYellowCave','SecretBaseRedCave','InsideOfTruck','Unused2','Contest','LilycoveMuseum','BrendansMaysHouse','Lab','Underwater','PetalburgGym','SootopolisGym','GenericBuilding','MauvilleGameCorner','RustboroGym','DewfordGym','MauvilleGym','LavaridgeGym','TrickHousePuzzle','FortreeGym','MossdeepGym','InsideShip','SecretBasePrimary']
+          def lz(d):
+              n=d[1]|d[2]<<8|d[3]<<16; i=4; o=bytearray()
+              while len(o)<n:
+                  f=d[i]; i+=1
+                  for b in range(8):
+                      if len(o)>=n: break
+                      if f&(0x80>>b):
+                          a,c=d[i],d[i+1]; i+=2; disp=((a&15)<<8)|c; ln=(a>>4)+3; s=len(o)-disp-1
+                          for _ in range(ln): o.append(o[s]); s+=1
+                      else: o.append(d[i]); i+=1
+              return bytes(o)
+          inv=[]
+          for i in range(58):
+              flags,tp,pp,mp,cb,ap=struct.unpack_from('<6I',r,base+i*24)
+              raw=r[tp-0x8000000:tp-0x8000000+0x20000]
+              try: tb=len(lz(raw)) if raw and raw[0]==0x10 else min(len(raw),0x10000)
+              except: tb=0
+              inv.append({'id':i,'name':names[i],'is_secondary':bool(flags&0x100),'is_compressed':bool(flags&1),'tiles_ptr':hex(tp),'palettes_ptr':hex(pp),'metatiles_ptr':hex(mp),'callback_ptr':hex(cb),'attributes_ptr':hex(ap),'tile_count':tb//32,'real_rom_source':True})
+          sha=hashlib.sha256(r).hexdigest()
+          json.dump({'base_rom_sha256':sha,'table_address':'0x08776358','entry_size':24,'tilesets':inv},open(out/'phase21_tileset_inventory.json','w'),indent=2)
+          cat=json.load(open(p20/'phase20_metatile_catalog.json'))['records']; roles={x['metatile_id']:x['role'] for x in cat}
+          def choose(name):
+              n=name.upper()
+              if 'PC' in n:return 18,'PokemonCenter','Building'
+              if 'GYM' in n:
+                  m=re.search(r'C(\d+)',n); k=int(m.group(1)) if m else 1; gym=[49,50,51,52,54,55,46,45][(k-1)%8]; return gym,names[gym],'Building'
+              if 'CAVE' in n or n.startswith('D') or 'TUNNEL' in n:return 19,'Cave','Building'
+              if 'FS' in n:return 47,'GenericBuilding','Building'
+              if n.startswith('W'):return 12,'Pacifidlog','General'
+              if n.startswith('L'):return 23,'MeteorFalls','General'
+              if n.startswith('T'):
+                  m=re.match(r'T(\d+)',n); k=int(m.group(1)) if m else 1; q=[1,2,3,4,5,6,7,8,9,10,11,12,13][(k-1)%13]; return q,names[q],'General'
+              if n.startswith('C'):
+                  m=re.match(r'C(\d+)',n); k=int(m.group(1)) if m else 1; q=[1,2,3,4,5,6,7,8,9,10,11,13][(k-1)%12]; return q,names[q],'General'
+              return 1,'Petalburg','General'
+          vals=json.load(open(p20/'phase20_map_validation.json')); maps=[]; sec=collections.Counter()
+          for v in vals:
+              sid,sn,pn=choose(v['name']); sec[sn]+=1
+              maps.append({'map_id':v['map_id'],'name':v['name'],'width':v['width'],'height':v['height'],'primary_tileset':{'id':0 if pn=='General' else 16,'name':pn},'secondary_tileset':{'id':sid,'name':sn},'input_mapped_cells':v['mapped_cells'],'input_unresolved_cells':v['unresolved_cells'],'status':'phase21_tileset_assigned','rom_integration_allowed':False})
+          json.dump({'base_rom_sha256':sha,'map_references':maps,'unique_map_count':len(set((x['map_id'],x['name']) for x in maps))},open(out/'phase21_map_tileset_plan.json','w'),indent=2)
+          json.dump({'map_references':len(maps),'unique_maps':len(set((x['map_id'],x['name']) for x in maps)),'secondary_usage':dict(sec),'tileset_inventory':len(inv),'integration_allowed':False},open(out/'phase21_mapping_statistics.json','w'),indent=2)
+          bd=out/'phase21_visual_blockdata'; bd.mkdir()
+          for mf in sorted((p20/'maps').glob('*/manifest.json')):
+              m=json.load(open(mf)); d=bd/mf.parent.name; d.mkdir(); shutil.copy2(mf.parent/'visual_metatile_map.bin',d/'visual_metatile_map.bin')
+              sid,sn,pn=choose(m['name']); m.update({'primary_tileset':{'id':0 if pn=='General' else 16,'name':pn},'secondary_tileset':{'id':sid,'name':sn},'status':'phase21_tileset_assigned','rom_integration_allowed':False})
+              json.dump(m,open(d/'manifest.json','w'),indent=2)
+          errs=[]
+          for mf in bd.glob('*/manifest.json'):
+              m=json.load(open(mf)); b=(mf.parent/'visual_metatile_map.bin').read_bytes()
+              if len(b)!=m['width']*m['height']*2: errs.append('size:'+str(m['map_id']))
+              for q in struct.iter_unpack('<H',b):
+                  if q[0]!=0xffff and q[0] not in roles: errs.append('metatile:'+str(m['map_id'])+':'+str(q[0])); break
+          json.dump({'phase':21,'base_sha256':sha,'map_references':len(maps),'unique_maps':len(list(bd.iterdir())),'errors':errs,'semantic_catalog_ids':sorted(roles),'tileset_inventory_count':len(inv),'rom_integration_allowed':False,'policy':'Real GBA tileset pairs assigned per reconstructed map; Phase 20 semantic IDs preserved until semantic-to-secondary matching is validated.'},open(out/'phase21_validation.json','w'),indent=2)
+          open(out/'PHASE21_REPORT.md','w').write('# Phase 21 - Real GBA Tileset Assignment\n\nBase ROM SHA-256: '+sha+'\n\nMap references: '+str(len(maps))+'\nUnique reconstructed maps: '+str(len(list(bd.iterdir())))+'\nReal tileset records inspected: '+str(len(inv))+'\nValidation errors: '+str(len(errs))+'\nROM integration: NOT ALLOWED\n\nEach reconstructed map now receives a real primary/secondary tileset pair from the stable Step21 ROM. Phase 20 semantic metatile maps are preserved until semantic-to-secondary correspondence is validated.\n')
+          z=Path('/tmp/sinnoh_reconstruction_phase21.zip')
+          with zipfile.ZipFile(z,'w',zipfile.ZIP_DEFLATED) as f:
+              for x in out.rglob('*'):
+                  if x.is_file(): f.write(x,x.relative_to(out.parent))
+          print('PHASE21_SHA256',hashlib.sha256(z.read_bytes()).hexdigest()); print('PHASE21_SIZE',z.stat().st_size); print('PHASE21_MAP_REFS',len(maps),'UNIQUE',len(list(bd.iterdir())),'ERRORS',len(errs))
           PY
-
-      - name: Upload probe
+      - name: Upload Phase 21 package
         uses: actions/upload-artifact@v4
         with:
-          name: phase21-probe
-          path: /tmp/phase20_probe.txt
-          retention-days: 7
+          name: sinnoh-reconstruction-phase21
+          path: /tmp/sinnoh_reconstruction_phase21.zip
+          retention-days: 14
