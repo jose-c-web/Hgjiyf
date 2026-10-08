@@ -1,0 +1,17 @@
+{
+  "phase": 53,
+  "rom_sha256": "666ecd95ba41c0d69d42b2052d848c9a9272d68baa8b45c5da1050c36e834dd7",
+  "maps": [
+    0,
+    12,
+    114,
+    117,
+    129
+  ],
+  "next": "Oreburgh Gym / Coal Badge",
+  "script_arena": "0x1ff9200",
+  "descriptor": "0x1ff9400",
+  "runtime_hook": false,
+  "static_validation": "PASS",
+  "runtime_validation": "PENDING"
+}
