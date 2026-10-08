@@ -1,0 +1,36 @@
+name: Phase 23 - Contextual Real Visual Blockdata
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  build-phase23:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          lfs: true
+          fetch-depth: 1
+      - name: Build Phase 23
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -f sinnoh_step21_warpchain.gba
+          test "$(sha256sum sinnoh_step21_warpchain.gba | awk '{print $1}')" = "cd7a419797e9a45c3060771769b8f028592416e9381fc8e88b5da4c2c640dfa2"
+          unzip -t sinnoh_work/sinnoh_reconstruction_phase20.zip >/dev/null
+          rm -rf /tmp/p20 /tmp/p22 /tmp/p23
+          mkdir -p /tmp/p20 /tmp/p22 /tmp/p23
+          unzip -q sinnoh_work/sinnoh_reconstruction_phase20.zip -d /tmp/p20
+          python3 tools/phase22_builder.py
+          python3 tools/phase23_builder.py
+      - name: Upload Phase 23 package
+        uses: actions/upload-artifact@v4
+        with:
+          name: sinnoh-reconstruction-phase23
+          path: /tmp/sinnoh_reconstruction_phase23.zip
+          retention-days: 14
