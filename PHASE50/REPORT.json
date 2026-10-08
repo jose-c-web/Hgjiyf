@@ -1,0 +1,14 @@
+{
+  "phase": 50,
+  "base_sha256": "8c31e260853a1ce59871c2557028d92a54f7856c7bde5579f3cfc7952234d099",
+  "output_sha256": "68bd95f09e39cc8934df19b63f1927ba3687662e6a2ea38d05aaa783463d2395",
+  "map0_header": "0x1fe3084",
+  "object_pool": "0x1fe3004",
+  "patched_local_id": 1,
+  "script_offset": "0x1ff91e0",
+  "script_pointer": "0x09ff91e0",
+  "script_bytes": "29000702",
+  "changed_byte_count": 14,
+  "static_validation": "PASS",
+  "runtime_hook": "ObjectEventTemplate.script only"
+}
