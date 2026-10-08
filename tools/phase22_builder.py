@@ -243,9 +243,24 @@ for sid,s in enumerate(sets):
 
 json.dump({
     "phase":22,"base_rom_sha256":SHA,"tileset_count":len(sets),
-    "semantic_prototypes":prototypes,"errors":errors,
+    "semantic_prototypes":prototypes,
+    "candidates":candidates,
+    "errors":errors,
     "policy":"Candidates only. No semantic mapping is committed to ROM; low-confidence matches remain candidates."
 },open(OUT/"phase22_semantic_candidates.json","w"),indent=2)
+
+catalog=[]
+for s in sets:
+    catalog.append({
+        "id":s["id"],"name":s["name"],"tile_count":s["tile_count"],
+        "valid_metatile_count":s["valid_metatile_count"],
+        "metatiles":s["metatiles"]
+    })
+json.dump({
+    "phase":22,"base_rom_sha256":SHA,"tilesets":catalog,
+    "errors":errors,
+    "policy":"Real GBA tileset/metatile inventory extracted from the unchanged Step21 ROM."
+},open(OUT/"phase22_real_metatile_catalog.json","w"),indent=2)
 
 # For each reconstructed map, restrict candidates to the tileset pair selected
 # in Phase21 and emit a per-semantic-role shortlist. This is the bridge toward
