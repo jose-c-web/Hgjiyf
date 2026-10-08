@@ -46,6 +46,7 @@ jobs:
           cp "sinnoh_step21_warpchain.gba" artifact/
           cp "sinnoh_step22_route202_jubilife.gba" artifact/
           cp "PK P3ar1 (PT-BR).zip" artifact/
+          cp "sinnoh_work/sinnoh_reconstruction_phase20.zip" artifact/
 
       - name: Upload ROM artifact
         uses: actions/upload-artifact@v4
