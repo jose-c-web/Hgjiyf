@@ -1,47 +1,40 @@
 # Phase 44/45 artifact recovery
 
-The exact Phase44 and Pearl script/event inputs were **re-verified in the current working environment on 2026-10-08**.
+## Current verified state
 
-## Verified artifacts
+The repository contains the exact cryptographic fingerprints from the prior verified Phase44 handoff, but the binary bytes are **not currently present in this execution environment** and are **not committed to this public repository**.
 
-| Artifact | Size | SHA-256 | Role |
+Therefore Phase45 is **BLOCKED_PENDING_BINARY_RECOVERY**. This is intentional: a SHA-256 recorded in a handoff is not sufficient to reconstruct a missing ROM or NARC.
+
+## Exact inputs that must be recovered
+
+| Artifact | Size | SHA-256 | Required |
 |---|---:|---|---|
-| sinnoh_step44_events_converted.gba | 33,554,432 | 9e12e7c2de0f0671d339c6683e6295944d5a281f3d0e4d436fd617c2120512d0 | Phase45 ROM input |
-| sinnoh-reconstruction-phase44.zip | 14,532,507 | 78882441482c26f70dcbd12ee5834b731757ef5109698e72b2b2eb1e1993df4c | Recovery package |
-| scr_seq_release.narc | 219,608 | c62e6f7f537fbff6604ba0e7985270ace40562d5a6912f2661b892545f039af7 | Gen4 script source |
-| zone_event_release.narc | 140,020 | 3b61439a26b1c4bc6de9b1301a5a3073f6edf2b392082a4427e8ef3228bb23a4 | Gen4 event source |
-| PK P3ar1 (PT-BR).nds | 61,105,608 | 03455137ff59c27e192355153e66007f60a2566bbb6e3ce59b6d2a0101c8880c | Source container |
+| sinnoh_step44_events_converted.gba | 33,554,432 | 9e12e7c2de0f0671d339c6683e6295944d5a281f3d0e4d436fd617c2120512d0 | Yes |
+| sinnoh-reconstruction-phase44.zip | 14,532,507 | 78882441482c26f70dcbd12ee5834b731757ef5109698e72b2b2eb1e1993df4c | Preferred recovery package |
+| fielddata/script/scr_seq_release.narc | 219,608 | c62e6f7f537fbff6604ba0e7985270ace40562d5a6912f2661b892545f039af7 | Yes |
+| fielddata/eventdata/zone_event_release.narc | 140,020 | 3b61439a26b1c4bc6de9b1301a5a3073f6edf2b392082a4427e8ef3228bb23a4 | Yes |
+| PK P3ar1 (PT-BR).nds | 61,105,608 | 03455137ff59c27e192355153e66007f60a2566bbb6e3ce59b6d2a0101c8880c | Optional if the two NARCs are recovered separately |
 
-## Phase44 package contents
+## What has been established
 
-The recovery ZIP was inspected directly and contains exactly:
+- Phase 1–44 must not be redone.
+- Phase44 remains the only valid base for Phase45.
+- The hashes above are preserved from the prior verified handoff.
+- GitHub searches for the exact ROM, ZIP and NARC filenames returned no binary matches.
+- No binary upload/release is being claimed here.
+- Existing unverified Phase45 outputs must not be used as a substitute.
 
-- `sinnoh_step44_events_converted.gba`
-- `PHASE44_REPORT.md`
-- `phase44_statistics.json`
-- `phase44_warp_fallbacks.json`
+## Fastest recovery path
 
-The Phase44 ROM is the exact 32 MiB input with SHA-256 `9e12e7c2de0f0671d339c6683e6295944d5a281f3d0e4d436fd617c2120512d0`.
+1. Recover/upload the original `sinnoh-reconstruction-phase44.zip` from the previous execution/environment.
+2. Verify its SHA-256 against `78882441482c26f70dcbd12ee5834b731757ef5109698e72b2b2eb1e1993df4c`.
+3. Extract and verify `sinnoh_step44_events_converted.gba` against `9e12e7c2de0f0671d339c6683e6295944d5a281f3d0e4d436fd617c2120512d0`.
+4. Recover the two Pearl NARCs, or the verified Pearl source, and verify their hashes.
+5. Only then start the real Phase45 script audit/conversion.
 
-The Pearl source archive contains the original `PK P3ar1 (PT-BR).nds`. The two required NARCs were recovered from that source and independently hashed.
+## Phase45 engineering target
 
-## Phase45 status
+Convert Pearl/Gen4 scripts into executable Quetzal/Emerald-compatible GBA scripts while preserving all Phase44 map/event/warp structures and the corrected warp-engine behavior.
 
-- Phase 1–44: complete; do not redo.
-- Phase44 base: **verified and accessible**.
-- Pearl script NARC: **verified and accessible**.
-- Pearl event NARC: **verified and accessible**.
-- Phase45: **READY_FOR_SCRIPT_CONVERSION**.
-- Existing unverified Phase45 outputs are not accepted as the basis for continuation.
-
-## Phase45 rule
-
-Use the exact SHA-256 inputs above. Do not substitute an earlier ROM, do not rebuild Phase44, and do not fabricate a script inventory.
-
-## Distribution note
-
-The repository stores continuity metadata, reports and cryptographic fingerprints. The ROM/NDS/NARC binaries are not published here because they contain copyrighted game assets. The verified binary inputs remain available in the working environment and must be hash-checked before conversion.
-
-## Next engineering step
-
-Audit the exact `scr_seq_release.narc`, recover the complete D/P command inventory, identify the actual Quetzal/Emerald script ABI in the verified Phase44 ROM, then generate and statically validate converted scripts while preserving Phase44 event/warp data and the warp-engine fix.
+Do not fabricate an inventory and do not substitute an earlier ROM.
