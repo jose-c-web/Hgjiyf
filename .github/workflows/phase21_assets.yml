@@ -1,0 +1,28 @@
+name: Phase 21 Assets
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  assets:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          lfs: true
+      - name: Verify and upload source assets
+        run: |
+          set -e
+          test "$(sha256sum sinnoh_step21_warpchain.gba | awk '{print $1}')" = "cd7a419797e9a45c3060771769b8f028592416e9381fc8e88b5da4c2c640dfa2"
+          mkdir -p out
+          cp sinnoh_step21_warpchain.gba out/
+          cp "PK P3ar1 (PT-BR).zip" out/
+          sha256sum out/*
+      - uses: actions/upload-artifact@v4
+        with:
+          name: phase21-source-assets
+          path: out/
+          retention-days: 7
