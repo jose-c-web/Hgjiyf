@@ -1,0 +1,65 @@
+name: Phase 21 - Real Tileset Reconstruction
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+
+permissions:
+  contents: write
+
+jobs:
+  phase21:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository with LFS
+        uses: actions/checkout@v4
+        with:
+          lfs: true
+          fetch-depth: 1
+
+      - name: Verify base ROM
+        run: |
+          set -e
+          test -f sinnoh_step21_warpchain.gba
+          test "$(sha256sum sinnoh_step21_warpchain.gba | awk '{print $1}')" = "cd7a419797e9a45c3060771769b8f028592416e9381fc8e88b5da4c2c640dfa2"
+          test -f sinnoh_work/sinnoh_reconstruction_phase20.zip
+          unzip -t sinnoh_work/sinnoh_reconstruction_phase20.zip
+
+      - name: Extract Phase 20
+        run: |
+          rm -rf /tmp/phase20
+          mkdir -p /tmp/phase20
+          unzip -q sinnoh_work/sinnoh_reconstruction_phase20.zip -d /tmp/phase20
+
+      - name: Inspect Phase 20
+        run: |
+          python3 - <<'PY'
+          import json, os, glob
+          root='/tmp/phase20'
+          out=[]
+          files=sorted(glob.glob(root+'/**/*',recursive=True))
+          out.append('FILES=%d'%sum(os.path.isfile(x) for x in files))
+          for f in files:
+              if os.path.isfile(f) and f.lower().endswith('.json'):
+                  rel=os.path.relpath(f,root)
+                  try:
+                      d=json.load(open(f,encoding='utf8'))
+                      if isinstance(d,dict):
+                          out.append(rel+' KEYS='+','.join(list(d.keys())[:40]))
+                          if 'maps' in d and isinstance(d['maps'],list):
+                              out.append(rel+' maps_count='+str(len(d['maps'])))
+                      elif isinstance(d,list):
+                          out.append(rel+' LIST='+str(len(d)))
+                  except Exception as e:
+                      out.append(rel+' JSON_ERROR='+str(e))
+          open('/tmp/phase20_probe.txt','w').write('\\n'.join(out))
+          print('\\n'.join(out[:300]))
+          PY
+
+      - name: Upload probe
+        uses: actions/upload-artifact@v4
+        with:
+          name: phase21-probe
+          path: /tmp/phase20_probe.txt
+          retention-days: 7
