@@ -1,0 +1,63 @@
+{
+  "project": "Sinnoh GBA ROM Hack",
+  "phase": 45,
+  "status": "READY_FOR_SCRIPT_CONVERSION",
+  "recovery_status": "PHASE44_ARTIFACTS_RECOVERED_LOCALLY",
+  "base_phase44_rom_sha256": "9e12e7c2de0f0671d339c6683e6295944d5a281f3d0e4d436fd617c2120512d0",
+  "phase44_zip_sha256": "78882441482c26f70dcbd12ee5834b731757ef5109698e72b2b2eb1e1993df4c",
+  "pearl_zip_sha256": "db8c97ff0381cc6a4faf84219d285433f0d0974fd1c82b1b503b704e1cc36438",
+  "inputs": [
+    {
+      "name": "sinnoh_step44_events_converted.gba",
+      "size": 33554432,
+      "sha256": "9e12e7c2de0f0671d339c6683e6295944d5a281f3d0e4d436fd617c2120512d0",
+      "purpose": "Exact Phase44 ROM input for Phase45 script conversion",
+      "public_distribution": false
+    },
+    {
+      "name": "sinnoh-reconstruction-phase44.zip",
+      "size": 14532507,
+      "sha256": "78882441482c26f70dcbd12ee5834b731757ef5109698e72b2b2eb1e1993df4c",
+      "contains": [
+        "sinnoh_step44_events_converted.gba",
+        "phase44_statistics.json",
+        "phase44_warp_fallbacks.json",
+        "PHASE44_REPORT.md"
+      ],
+      "purpose": "Exact Phase44 recovery package",
+      "public_distribution": false
+    },
+    {
+      "name": "fielddata_script_scr_seq_release.narc",
+      "size": 219608,
+      "sha256": "c62e6f7f537fbff6604ba0e7985270ace40562d5a6912f2661b892545f039af7",
+      "purpose": "Pearl Gen4 script source for Phase45 conversion",
+      "public_distribution": false
+    },
+    {
+      "name": "fielddata_eventdata_zone_event_release.narc",
+      "size": 140020,
+      "sha256": "3b61439a26b1c4bc6de9b1301a5a3073f6edf2b392082a4427e8ef3228bb23a4",
+      "purpose": "Pearl event source used to reproduce/audit Phase44",
+      "public_distribution": false
+    },
+    {
+      "name": "PK P3ar1 (PT-BR).nds",
+      "size": 61105608,
+      "sha256": "03455137ff59c27e192355153e66007f60a2566bbb6e3ce59b6d2a0101c8880c",
+      "purpose": "Local source from which the two required NARCs were extracted",
+      "public_distribution": false
+    }
+  ],
+  "phase44": {
+    "maps": 204,
+    "objects": 813,
+    "warps": 380,
+    "triggers": 31,
+    "scripts_preserved_as_metadata": 813,
+    "script_execution": "disabled_safely_with_gba_end_stub",
+    "warp_fix_preserved": true,
+    "arena": "0x1FE3000..0x1FE96CC"
+  },
+  "rule": "Do not substitute Phase43/Step21 or invent a script inventory. Phase45 must use the exact Phase44 ROM plus the exact Pearl script/event NARCs identified by these hashes."
+}
