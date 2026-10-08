@@ -31,7 +31,7 @@ jobs:
           from pathlib import Path
           import json,struct,hashlib,shutil,re,collections,zipfile
           rom=Path('sinnoh_step21_warpchain.gba'); r=rom.read_bytes(); base=0x776358
-          p20=Path('/tmp/p20'); out=Path('/tmp/p21'); out.mkdir()
+          p20=Path('/tmp/p20'); out=Path('/tmp/p21'); out.mkdir(exist_ok=True)
           names=['General','Petalburg','Rustboro','Dewford','Slateport','Mauville','Lavaridge','Fallarbor','Fortree','Lilycove','Mossdeep','EverGrande','Pacifidlog','Sootopolis','BattleFrontierOutsideWest','BattleFrontierOutsideEast','Building','Shop','PokemonCenter','Cave','PokemonSchool','PokemonFanClub','Unused1','MeteorFalls','OceanicMuseum','CableClub','SeashoreHouse','PrettyPetalFlowerShop','PokemonDayCare','Facility','BikeShop','RusturfTunnel','SecretBaseBrownCave','SecretBaseTree','SecretBaseShrub','SecretBaseBlueCave','SecretBaseYellowCave','SecretBaseRedCave','InsideOfTruck','Unused2','Contest','LilycoveMuseum','BrendansMaysHouse','Lab','Underwater','PetalburgGym','SootopolisGym','GenericBuilding','MauvilleGameCorner','RustboroGym','DewfordGym','MauvilleGym','LavaridgeGym','TrickHousePuzzle','FortreeGym','MossdeepGym','InsideShip','SecretBasePrimary']
           def lz(d):
               n=d[1]|d[2]<<8|d[3]<<16; i=4; o=bytearray()
