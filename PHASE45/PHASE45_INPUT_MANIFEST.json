@@ -1,8 +1,8 @@
 {
   "project": "Sinnoh GBA ROM Hack",
   "phase": 45,
-  "status": "READY_FOR_SCRIPT_CONVERSION",
-  "recovery_status": "PHASE44_AND_PEARL_SCRIPT_INPUTS_VERIFIED_IN_CURRENT_ENVIRONMENT",
+  "status": "BLOCKED_PENDING_BINARY_RECOVERY",
+  "verified_hashes_status": "KNOWN_FROM_PRIOR_VERIFIED_HANDOFF_BUT_BYTES_NOT_PRESENT_IN_CURRENT_ENVIRONMENT",
   "verified_at": "2026-10-08",
   "base_phase44_rom_sha256": "9e12e7c2de0f0671d339c6683e6295944d5a281f3d0e4d436fd617c2120512d0",
   "phase44_zip_sha256": "78882441482c26f70dcbd12ee5834b731757ef5109698e72b2b2eb1e1993df4c",
@@ -12,47 +12,36 @@
       "name": "sinnoh_step44_events_converted.gba",
       "size_bytes": 33554432,
       "sha256": "9e12e7c2de0f0671d339c6683e6295944d5a281f3d0e4d436fd617c2120512d0",
-      "purpose": "Exact Phase44 ROM input for Phase45 script conversion",
-      "public_distribution": false,
-      "verified_current_environment": true
+      "purpose": "Exact Phase44 ROM input for Phase45",
+      "bytes_accessible_now": false
     },
     {
       "name": "sinnoh-reconstruction-phase44.zip",
       "size_bytes": 14532507,
       "sha256": "78882441482c26f70dcbd12ee5834b731757ef5109698e72b2b2eb1e1993df4c",
-      "contains": [
-        "sinnoh_step44_events_converted.gba",
-        "phase44_statistics.json",
-        "phase44_warp_fallbacks.json",
-        "PHASE44_REPORT.md"
-      ],
       "purpose": "Exact Phase44 recovery package",
-      "public_distribution": false,
-      "verified_current_environment": true
+      "bytes_accessible_now": false
     },
     {
       "name": "fielddata/script/scr_seq_release.narc",
       "size_bytes": 219608,
       "sha256": "c62e6f7f537fbff6604ba0e7985270ace40562d5a6912f2661b892545f039af7",
       "purpose": "Pearl Gen4 script source",
-      "public_distribution": false,
-      "verified_current_environment": true
+      "bytes_accessible_now": false
     },
     {
       "name": "fielddata/eventdata/zone_event_release.narc",
       "size_bytes": 140020,
       "sha256": "3b61439a26b1c4bc6de9b1301a5a3073f6edf2b392082a4427e8ef3228bb23a4",
       "purpose": "Pearl Gen4 event source",
-      "public_distribution": false,
-      "verified_current_environment": true
+      "bytes_accessible_now": false
     },
     {
       "name": "PK P3ar1 (PT-BR).nds",
       "size_bytes": 61105608,
       "sha256": "03455137ff59c27e192355153e66007f60a2566bbb6e3ce59b6d2a0101c8880c",
       "purpose": "Pearl source container",
-      "public_distribution": false,
-      "verified_current_environment": true
+      "bytes_accessible_now": false
     }
   ],
   "phase44": {
@@ -65,12 +54,13 @@
     "warp_fix_preserved": true,
     "arena": "0x1FE3000..0x1FE96CC"
   },
-  "next_step": "Audit exact scr_seq_release.narc, map the D/P command ABI to the actual Quetzal/Emerald script ABI, convert scripts, patch pointers safely, and statically validate every result.",
+  "next_step": "Recover at least the exact Phase44 ZIP or ROM, verify SHA-256, then recover/verify the two Pearl NARCs and begin Phase45 script conversion.",
   "rules": [
     "Do not redo phases 1-44.",
     "Do not substitute Phase43 or Step21.",
     "Do not invent a script inventory.",
     "Do not claim runtime success until emulator testing.",
-    "Public repository contains hashes/metadata only; copyrighted ROM/NDS/NARC binaries remain private."
+    "Hash claims do not substitute for access to bytes.",
+    "Do not use any unverified Phase45 ROM as a base."
   ]
 }
