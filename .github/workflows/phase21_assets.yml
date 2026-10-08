@@ -2,6 +2,8 @@ name: Phase 21 Assets
 
 on:
   workflow_dispatch:
+  push:
+    branches: [main]
 
 permissions:
   contents: read
