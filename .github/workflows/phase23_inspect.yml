@@ -32,6 +32,15 @@ jobs:
           mans=list(root.rglob("manifest.json"))
           bins=list(root.rglob("visual_metatile_map.bin"))
           print("MANIFESTS",len(mans),"BINS",len(bins))
+          total=collections.Counter()
+          for b in bins:
+              raw=b.read_bytes()
+              vals=struct.unpack("<"+"H"*(len(raw)//2),raw)
+              total.update(vals)
+          print("GLOBAL_VALUES",total.most_common(30))
+          print("GLOBAL_NONZERO_NONFFFF",sum(v for k,v in total.items() if k not in (0,65535)))
+          print("GLOBAL_FFFF",total.get(65535,0))
+
           for m in mans[:20]:
               try:
                   d=json.loads(m.read_text())
