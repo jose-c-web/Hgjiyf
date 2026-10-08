@@ -1,0 +1,25 @@
+{
+  "phase": 57,
+  "rom": "Sinnoh_Phase57_interaction_adapter.gba",
+  "sha256": "3bccf269bac7a31ac9d0566e313c9b991abd3a93caada366c8f0475166a8ca16",
+  "adapter": {
+    "file_offset": "0x1FF9C00",
+    "gba": "0x09FF9C00",
+    "thumb_entry": "0x09FF9C01",
+    "size": 44,
+    "input": "r0=localId",
+    "output": "r0=script pointer for localId 1..5, else 0"
+  },
+  "engine_chain": [
+    "ProcessPlayerFieldInput",
+    "TryStartInteractionScript",
+    "GetInteractionScript",
+    "GetInteractedObjectEventScript",
+    "GetObjectEventScriptPointerByObjectEventId",
+    "ScriptContext_SetupScript"
+  ],
+  "source_basis": "pret/pokeemerald field_control_avatar.c",
+  "runtime_hook": false,
+  "static_validation": "PASS",
+  "runtime_validation": "PENDING"
+}
