@@ -188,3 +188,19 @@ pokeemerald: https://github.com/pret/pokeemerald
 PokePlat: https://github.com/JimB16/PokePlat
 scrcmd database: https://github.com/DS-Pokemon-Rom-Editor/scrcmd-database
 Projeto Pearl: https://github.com/jose-c-web/Hgjiyf
+
+
+## RECUPERAÇÃO DE ARTEFATOS — 2026-10-08
+A auditoria verificou que os artefatos binários da Phase44 existem no ambiente de trabalho, mas não estavam materializados no GitHub principal. O GitHub contém apenas ponteiros LFS de 133 bytes para algumas ROMs, portanto esses ponteiros não devem ser tratados como ROMs recuperáveis.
+
+Artefatos verificados localmente:
+- sinnoh_step44_events_converted.gba — 33554432 bytes — SHA-256 9e12e7c2de0f0671d339c6683e6295944d5a281f3d0e4d436fd617c2120512d0
+- sinnoh-reconstruction-phase44.zip — SHA-256 78882441482c26f70dcbd12ee5834b731757ef5109698e72b2b2eb1e1993df4c
+- fielddata_script_scr_seq_release.narc — SHA-256 c62e6f7f537fbff6604ba0e7985270ace40562d5a6912f2661b892545f039af7
+- fielddata_eventdata_zone_event_release.narc — SHA-256 3b61439a26b1c4bc6de9b1301a5a3073f6edf2b392082a4427e8ef3228bb23a4
+
+O relatório e as estatísticas da Phase44 agora também estão versionados em:
+- sinnoh_work/phase44/PHASE44_REPORT.md
+- sinnoh_work/phase44/phase44_statistics.json
+
+IMPORTANTE: os binários acima ainda precisam ser materializados no GitHub/LFS ou anexados ao próximo chat para que outro ambiente possa recuperá-los. Não substituir a Phase44 por uma ROM anterior.
