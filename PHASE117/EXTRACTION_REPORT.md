@@ -17,7 +17,7 @@ Resultados:
 - 1.294 registros de warp extraídos
 - 61 mapas com conexões de mapas
 - 421 previews PNG renderizados
-- 4 layouts com dados de mapa inválidos/truncados no LZ77; preservados e sinalizados, não corrigidos por suposição
+- 4 layouts cujos dados não puderam ser decodificados com segurança (falha de back-reference LZ77 ou comprimento incompatível); isso não prova, por si só, que a ROM esteja corrompida. Foram sinalizados, não corrigidos por suposição
 
 O pacote exporta os grids de metatiles descomprimidos, bordas, tiles 4bpp, paletas, metatiles, atributos, manifest JSON, índice CSV de mapas, índice CSV de warps, PNGs individuais e folhas de contato por grupo.
 
